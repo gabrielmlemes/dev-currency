@@ -3,7 +3,7 @@ import styles from "./home.module.css";
 import { BsSearch } from "react-icons/bs";
 import { Link, useNavigate } from "react-router-dom";
 
-interface CoinProps {
+export interface CoinProps {
   id: string;
   name: string;
   symbol: string;
@@ -19,7 +19,6 @@ interface CoinProps {
   formatedPrice?: string;
   formatedMarket?: string;
   formatedVolume?: string;
-  formatedId? : string;
 }
 
 interface DataProp {
@@ -29,45 +28,49 @@ interface DataProp {
 const Home = () => {
   const [input, setInput] = useState("");
   const [coins, setCoins] = useState<CoinProps[]>([]);
+  const [offset, setOffSet] = useState(0);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     getData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offset]);
 
+  // Faz o fetch na API, pega o resultado
   async function getData() {
-    fetch("https://api.coincap.io/v2/assets?limit=10&offset=0")
+    fetch(`https://api.coincap.io/v2/assets?limit=10&offset=${offset}`)
       .then((response) => response.json())
       .then((data: DataProp) => {
         const coinsData = data.data;
 
+        // Formatação de moeda para USD
         const price = Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
         });
 
+        // Formatação e compatação de números
         const priceCompact = Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
           notation: "compact",
         });
 
+        // Formatação dos dados de cada moeda
         const formatedResult = coinsData.map((item) => {
           const formated = {
             ...item,
             formatedPrice: price.format(Number(item.priceUsd)),
             formatedMarket: priceCompact.format(Number(item.marketCapUsd)),
             formatedVolume: priceCompact.format(Number(item.volumeUsd24Hr)),
-            formatedId: item.id.toLocaleUpperCase()
           };
 
           return formated;
         });
 
-        console.log(formatedResult);
-        
-
-        setCoins(formatedResult);
+        const listCoins = [...coins, ...formatedResult];
+        setCoins(listCoins);
       });
   }
 
@@ -79,7 +82,14 @@ const Home = () => {
     navigate(`/detail/${input}`);
   }
 
-  function handleGetMore() {}
+  function handleGetMore() {
+    if (offset === 0) {
+      setOffSet(10);
+      return;
+    }
+
+    setOffSet(offset + 10);
+  }
 
   return (
     <main className={styles.container}>
@@ -112,8 +122,13 @@ const Home = () => {
               <tr className={styles.tr} key={item.id}>
                 <td className={styles.tdLabel} data-label="Moeda">
                   <div className={styles.name}>
+                    <img
+                      src={`https://assets.coincap.io/assets/icons/${item?.symbol.toLocaleLowerCase()}@2x.png`}
+                      alt="logo cripto"
+                      className={styles.logo}
+                    />
                     <Link to={`/detail/${item.id}`}>
-                      <span>{item.formatedId}</span> | {item.symbol}
+                      <span>{item.name}</span> | {item.symbol}
                     </Link>
                   </div>
                 </td>
@@ -130,7 +145,14 @@ const Home = () => {
                   {item.formatedVolume}
                 </td>
 
-                <td className={Number(item.changePercent24Hr) > 0 ? styles.tdProfit : styles.tdLoss} data-label="Mudança 24h">
+                <td
+                  className={
+                    Number(item.changePercent24Hr) > 0
+                      ? styles.tdProfit
+                      : styles.tdLoss
+                  }
+                  data-label="Mudança 24h"
+                >
                   <span>{Number(item.changePercent24Hr).toFixed(3)}</span>
                 </td>
               </tr>

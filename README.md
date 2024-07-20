@@ -1,3 +1,7 @@
-# O que aprendi nesse projeto?
+# Qual foi o aprendizado reforçado nesse projeto?
 
-- Trabalhar com Rotas
+- Trabalhar com React Router;
+- Trabalhar com Renderização condicional;
+- Trabalhar com Hooks;
+- Consumir APIs REST;
+- CSS escopado
